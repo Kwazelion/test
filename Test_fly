@@ -1,0 +1,339 @@
+
+from tkinter import *
+import time
+import random
+
+canvas_max_x=300
+canvas_max_y=600
+windows_max_x=500
+windows_max_y=600
+
+root=Tk()
+
+sw = root.winfo_screenwidth()
+sh = root.winfo_screenheight()
+if sw/sh >0:
+    size_button=3
+else:
+    size_button=1
+size_button=1
+    
+root.title('test version')
+root.geometry(("%dx%d") % (windows_max_x,windows_max_y))
+#root.geometry('{}x{}'.format(*WINDOW_SHAPE))
+root.configure(background="snow")
+canvas=Canvas(root, width=canvas_max_x, height=canvas_max_y, bg='light gray')
+#canvas.pack(side=RIGHT,fill=Y, expand=1)
+canvas.place(x=150,y=0)
+shell=[]
+enemys=[]
+level=1
+auto_game=1
+
+text = Text(width=10, height=3)
+text.place(x=1,y=1)
+b_l = Button(text="left", width=size_button, height=size_button)
+b_r = Button(text="right", width=size_button, height=size_button)
+b_f = Button(text="fire", width=size_button, height=size_button)
+b_l.place(x=10,y=windows_max_y-50)
+b_r.place(x=70,y=windows_max_y-50)
+b_f.place(x=windows_max_x-50,y=windows_max_y-50)
+
+def auto_change():
+    global auto_game
+    if auto_var.get() == 0:
+        auto_game=0
+    elif auto_var.get() ==1:
+        auto_game=1
+
+auto_var = IntVar()
+auto_var.set(auto_game)
+auto_off = Radiobutton (text="off", variable = auto_var,
+	                        value=0,command=auto_change)
+auto_on = Radiobutton (text="on", variable = auto_var,
+	                        value=1, command=auto_change)
+auto_off.place(x=windows_max_x-50,y=30)
+auto_on.place(x=windows_max_x-50,y=60)
+label = Label (text="auto")
+label.place (x=windows_max_x-50,y=0)
+
+
+
+class Cheep():
+    def __init__ (self):
+        self.y=canvas_max_y-40
+        self.x=100
+        self.hp=1000
+        self.score=0
+        self.color="green"
+        self.speed=5
+        self.size=35
+        self.id=canvas.create_polygon(self.x,self.y,
+										self.x+self.size,self.y+self.size,
+										self.x-self.size,self.y+self.size,
+										self.x,self.y,fill=self.color)
+	
+    def auto_game(self):
+        self.x += self.speed
+        if self.x>canvas_max_x-self.size:
+            self.speed =-self.speed
+        if self.x<self.size:
+            self.speed =-self.speed
+        canvas.coords(self.id, self.x,self.y,
+										self.x+self.size,self.y+self.size,
+										self.x-self.size,self.y+self.size,
+										self.x,self.y)
+        self.auto_fire()
+		
+    def say(self):
+        global level
+        text.delete(1.0, END)
+        text.insert(1.0, "score="+str(self.score)+"\n")
+        text.insert(2.1, "hp="+str(self.hp)+"\n")
+        text.insert(3.1, "level="+str(level-1))
+        
+    def auto_fire(self):
+        if random.randint(1,10)==1:
+            self.fire()
+            
+    def shoot(self):
+        global auto_game
+        auto_game=0
+        auto_var.set(0)
+        self.fire()
+    
+    def fire(self):
+        global shell
+        new_boolet1 = Boolet(raketa.x,raketa.y,1)
+        shell += [new_boolet1]
+        new_boolet2 = Boolet(raketa.x-raketa.size,
+            	                    raketa.y+raketa.size,1)
+        shell += [new_boolet2]
+        new_boolet3 = Boolet(raketa.x+raketa.size,
+            	                    raketa.y+raketa.size,1)
+        shell += [new_boolet3]
+        
+    def move_left(self):
+        global auto_game
+        auto_game=0
+        auto_var.set(0)
+        if self.speed<0:
+            self.speed = -self.speed
+        self.x -= self.speed
+        if self.x< self.size:
+            self.x=self.size
+        canvas.coords(self.id, self.x,self.y,
+										self.x+self.size,self.y+self.size,
+										self.x-self.size,self.y+self.size,
+										self.x,self.y)
+										
+    def move_right(self):
+        global auto_game
+        auto_game=0
+        auto_var.set(0)
+        if self.speed<0:
+            self.speed = -self.speed
+        self.x += self.speed
+        if self.x > canvas_max_x - self.size:
+            self.x = canvas_max_x - self.size
+        canvas.coords(self.id, self.x,self.y,
+										self.x+self.size,self.y+self.size,
+										self.x-self.size,self.y+self.size,
+										self.x,self.y)
+        
+    def die(self):
+        print("game over")
+		
+class Boolet():
+    def __init__ (self,x,y,my):
+        if my==1:
+            self.color="green"
+            self.speed=-10
+        else:
+            self.color="red"
+            self.speed=10
+        self.r=5
+        self.x=x
+        self.y=y
+        self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
+			                    self.x + self.r, self.y + self.r,
+			                    fill=self.color, outline= self.color)
+										
+    def move(self):
+        self.y+=self.speed
+        if self.y >canvas_max_y+10 or self.y<-10:
+            self.die()
+        canvas.coords(self.id,
+        	               self.x - self.r, self.y - self.r,
+			                    self.x + self.r, self.y + self.r)
+		
+    def kill(self):
+        self.die()
+		
+    def die(self):
+        canvas.delete(self.id)
+        for boolet in shell:
+            if self.id == boolet.id:
+                tmp=shell.index(boolet)
+                del shell[tmp]
+
+class Enemy():
+    def __init__ (self,x,y):
+        self.hp=10
+        self.color="red"
+        self.x=x
+        self.y=y
+        self.size=10
+        self.id=canvas.create_polygon(self.x,self.y,
+										self.x-self.size,self.y-self.size,
+										self.x+self.size,self.y-self.size,
+										self.x,self.y,fill=self.color)
+	
+    def shoot(self):
+        global shell
+        if random.randint(1,20)==1:
+            new_boolet=Boolet(self.x,self.y,7)
+            shell += [new_boolet]
+        
+		
+    def stop(self):
+        self.die()
+        self.tmp=0
+        self.boom=canvas.create_oval(self.x-10,self.y-10,
+							        self.x+10,self.y+10,fill="red")
+        self.colorin()
+	
+    def colorin(self):
+        color_boom=["red","blue","yellow","black","red","white"]
+        canvas.itemconfig(self.boom, fill=color_boom[int(self.tmp%6)])
+        self.tmp+=1
+        if self.tmp < 6 :
+            root.after(100,self.colorin)
+        else:
+            canvas.delete(self.boom)
+		
+    def die(self):
+        raketa.score+=1
+        canvas.delete(self.id)
+        for enemy in enemys:
+            if self.id == enemy.id:
+                tmp=enemys.index(enemy)
+                del enemys[tmp]
+
+def test_clash():
+    global shell,enemys
+    for boolet in shell:
+        for enemy in enemys:
+            if enemy.y >= boolet.y:
+                if enemy.x+enemy.size > boolet.x:
+                    if enemy.x-enemy.size < boolet.x:
+                        if boolet.color=="green":
+                            enemy.stop()
+                            boolet.die()
+    for boolet in shell:
+        if raketa.y <= boolet.y:
+            if raketa.x + raketa.size > boolet.x:
+                if raketa.x-raketa.size<boolet.x:
+                    if boolet.color=="red":
+                        boolet.die()
+                        raketa.hp-=1
+                        if raketa.hp<=0:
+                            raketa.die()
+
+
+
+raketa=Cheep()
+
+def new_game():
+    global enemys,raketa,level
+    
+    if level >= 3:
+        for y in range (10,110,30):
+            for x in range(10,canvas_max_x,30):
+                new_enemy=Enemy(x,y)
+                enemys+=[new_enemy]
+        level+=1
+        
+        
+        
+    if level == 2:
+        for y in range (20,60,30):
+            for x in range(30,canvas_max_x,30):
+                new_enemy=Enemy(x,y)
+                enemys+=[new_enemy]
+        level+=1
+        
+    if level==1:
+        for x in range (30,canvas_max_x,30):
+            new_enemy=Enemy(x,20)
+            enemys+=[new_enemy]
+        level+=1
+
+
+def move_left(event):
+    global auto_game
+    auto_game=0
+    auto_var.set(0)
+    if raketa.speed<0:
+        raketa.speed = -raketa.speed
+    raketa.x -= raketa.speed
+    if raketa.x< raketa.size:
+        raketa.x=raketa.size
+    canvas.coords(raketa.id, raketa.x,raketa.y,
+										raketa.x+raketa.size,raketa.y+raketa.size,
+										raketa.x-raketa.size,raketa.y+raketa.size,
+										raketa.x,raketa.y)
+										
+def move_right(event):
+    global auto_game
+    auto_game=0
+    auto_var.set(0)
+    if raketa.speed<0:
+        raketa.speed = -raketa.speed
+    raketa.x += raketa.speed
+    if raketa.x > canvas_max_x - raketa.size:
+        raketa.x = canvas_max_x - raketa.size
+    canvas.coords(raketa.id, raketa.x,raketa.y,
+										raketa.x+raketa.size,raketa.y+raketa.size,
+										raketa.x-raketa.size,raketa.y+raketa.size,
+										raketa.x,raketa.y)
+        
+
+def shoot(event):
+    global auto_game
+    auto_game=0
+    auto_var.set(0)
+    raketa.fire()
+
+
+def game():
+    global shell,level,auto_game
+    if len(enemys)==0:
+        new_game()
+    
+    
+    for enemy in enemys:
+        enemy.shoot()
+        
+    for boolet in shell:
+        boolet.move()
+        
+    b_l.config(command=raketa.move_left)
+    b_r.config(command=raketa.move_right)
+    b_f.config(command=raketa.shoot)
+    #b_l.bind("<Key>", move_left)
+    #b_r.bind("<Key>", move_right)
+    #b_f.bind("<Key>", shoot)
+    
+    if auto_game == 1:
+        raketa.auto_game()
+        
+    test_clash()
+    raketa.say()
+    canvas.update()
+    root.after(100,game)
+
+
+new_game()
+game()
+root.mainloop()
